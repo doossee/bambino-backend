@@ -1,154 +1,195 @@
 from django.db import models
-from modeltrans.fields import TranslationField
-from mptt.models import MPTTModel, TreeForeignKey
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+
+from mptt.models import MPTTModel, TreeForeignKey
+
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill
+
+from src.models import Extensions, TimeStampedModel
+
+from .fields import WebPField
+
 
 User = get_user_model()
 
-class AbstractProductModel(models.Model):
 
-    """Abstract Product Model"""
+def brand_image_path(instance, filename):
+    return "brand/icons/{}/{}".format(instance.name, filename)
 
-    title = models.CharField(max_length=100)
-    description = models.TextField()
-    usage = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    i18n = TranslationField(fields=('description', 'usage'), required_languages=('ru','uz'))
+def category_image_path(instance, filename):
+    return "category/icons/{}/{}".format(instance.name, filename)
 
-    class Meta:
-        abstract = True
+
+def product_image_path(instance, filename):
+    return "product/images/{}/{}".format(instance.title, filename)
 
 
 class Brand(models.Model):
+    """
+    Brand model
+    """
 
-    """Brand model"""
-
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    image = VersatileImageField(
-        'Image',
-        upload_to='images/',
-        ppoi_field='image_ppoi'
-    )
-    image_ppoi = PPOIField()
-
-    i18n = TranslationField(fields=('description',))
+    name = models.CharField(verbose_name=_("Brand name"), max_length=255)
+    description = models.TextField(verbose_name=_("Description"), blank=True)
+    icon = WebPField(upload_to=brand_image_path, blank=True)
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
-        verbose_name = 'Brand'
-        verbose_name_plural = 'Brands'
+        verbose_name = _("Brand")
+        verbose_name_plural = _("Brands")
 
 
 class Category(MPTTModel):
+    """
+    Category model
+    """
 
-    """Category model"""
+    name = models.CharField(verbose_name=_("Name"), max_length=255)
+    icon = WebPField(upload_to=category_image_path, blank=True)
+    parent = TreeForeignKey(
+        verbose_name=_("Parent category"),
+        to="self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(
+        verbose_name=_("Created at"), db_index=True, auto_now_add=True
+    )
+    updated_at = models.DateTimeField(verbose_name=_("Updated at"), auto_now=True)
 
-    name = models.CharField(max_length=100)
-    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
-
-    i18n = TranslationField(fields=('name',))
+    class Meta:
+        verbose_name = _("Category")
+        verbose_name_plural = _("Categories")
 
     def __str__(self):
         return self.name
 
-    class MPTTMeta:
-        order_insertion_by = ['name']
-    
-    class Meta:
-        verbose_name = 'Category'
-        verbose_name_plural = 'Categories'
 
+class Product(Extensions):
+    """
+    Product model
+    """
 
+    title = models.CharField(verbose_name=_("Title"), max_length=255)
+    description = models.TextField(verbose_name=_("Description"), blank=True)
 
-class Product(AbstractProductModel):
-    
-    """Product model"""
-    
-    title = models.CharField(max_length=100)
-    description = models.TextField()
-    usage = models.TextField()
+    category = TreeForeignKey(
+        verbose_name=_("Category"),
+        to=Category,
+        related_name="products",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+    brand = models.ForeignKey(
+        verbose_name=_("Brand"),
+        to=Brand,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
 
-    category = models.ForeignKey(to=Category, related_name='products', null=True, on_delete=models.SET_NULL)
-    brand = models.ForeignKey(to=Brand, null=True, on_delete=models.SET_NULL)
-    
-    price = models.DecimalField(max_digits=11, decimal_places=2)
-    discount = models.PositiveSmallIntegerField()
+    quantity = models.IntegerField(verbose_name=_("Quantity"), default=1)
 
-    is_published = models.BooleanField(default=False)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    price = models.DecimalField(
+        verbose_name=_("Price"), max_digits=11, decimal_places=2
+    )
+    discount = models.PositiveSmallIntegerField(
+        verbose_name=_("Discount"), default=0, blank=True
+    )
+
+    views = models.PositiveIntegerField(verbose_name=_("Views"), default=0)
+    is_deleted = models.BooleanField(verbose_name=_("Is deleted"), default=False)
 
     def __str__(self):
         return self.title
 
     class Meta:
-        verbose_name = 'Product'
-        verbose_name_plural = 'Products'
+        verbose_name = _("Product")
+        verbose_name_plural = _("Products")
 
 
-class ProductUnit(models.Model):
+class ProductImage(models.Model):
+    """
+    Product images model
+    """
 
-    """Product unit model"""
-
-    product = models.ForeignKey(to=Product, related_name='units', on_delete=models.CASCADE)
-    balance = models.PositiveBigIntegerField(editable=False, default=0)
-    image = VersatileImageField(
-        'Image',
-        upload_to='images/',
-        ppoi_field='image_ppoi'
+    product = models.ForeignKey(
+        to=Product,
+        related_name="images",
+        on_delete=models.CASCADE,
+        verbose_name=_("Product"),
     )
-    image_ppoi = PPOIField()
-
-    class Meta:
-        unique_together = ('product', 'color')
-
-
-class Image(models.Model):
-
-    """Image model"""
-
-    product = models.ForeignKey(to=Product, related_name='images', on_delete=models.CASCADE)
-    image = VersatileImageField(
-        'Image',
-        upload_to='images/',
-        ppoi_field='image_ppoi'
+    image = models.ImageField(
+        verbose_name=_("Image"),
+        upload_to=product_image_path,
     )
-    image_ppoi = PPOIField()
+    thumbnail = ImageSpecField(
+        source="image",
+        processors=[ResizeToFill(100, 100)],
+        format="WEBP",
+        options={"quality": 60},
+        verbose_name=_("Thumbnail"),
+    )
 
     def __str__(self):
-        return f'{self.product.title}-{self.id} image'
-    
+        return f"{self.product.title}-{self.id} image"
+
     class Meta:
-        verbose_name = 'Image'
-        verbose_name_plural = 'Images'
+        verbose_name = _("Image")
+        verbose_name_plural = _("Images")
 
 
-class Rating(models.Model):
+class ProductView(TimeStampedModel):
+    """
+    Product views model
+    """
 
-    """Rating model"""
+    ip = models.CharField(verbose_name=_("IP address"), max_length=255)
+    product = models.ForeignKey(
+        Product, related_name="product_views", on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = _("Product view")
+        verbose_name_plural = _("Product views")
+
+
+class Review(models.Model):
+    """
+    Rating model
+    """
 
     RATE_CHOICES = (
-        (1, 'Ok'),
-        (2, 'Fine'),
-        (3, 'Good'),
-        (4, 'Amazing'),
-        (5, 'Incredible')
+        (1, _("Ok")),
+        (2, _("Fine")),
+        (3, _("Good")),
+        (4, _("Amazing")),
+        (5, _("Incredible")),
     )
-    user = models.ForeignKey(to=User, related_name='ratings', on_delete=models.CASCADE)
-    product = models.ForeignKey(to=Product, related_name='ratings', on_delete=models.CASCADE)
-    rate = models.PositiveSmallIntegerField(choices=RATE_CHOICES)
-    review = models.TextField()
-
+    user = models.ForeignKey(
+        verbose_name=_("User"),
+        to=User,
+        related_name="ratings",
+        on_delete=models.CASCADE,
+    )
+    product = models.ForeignKey(
+        to=Product,
+        related_name="ratings",
+        on_delete=models.CASCADE,
+        verbose_name=_("Product"),
+    )
+    rate = models.PositiveSmallIntegerField(_("Rate"), choices=RATE_CHOICES)
+    text = models.TextField(_("Text"))
 
     def __str__(self):
-        return f'{self.user}-{self.product}-{self.rate}'
+        return f"{self.user}-{self.product}-{self.rate}"
 
     class Meta:
-        verbose_name = 'Rating'
-        verbose_name_plural = 'Ratings'
+        verbose_name = _("Rating")
+        verbose_name_plural = _("Ratings")

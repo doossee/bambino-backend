@@ -2,7 +2,6 @@ from django.contrib.auth.models import BaseUserManager
 
 
 class CustomUserManager(BaseUserManager):
-
     """Custom User manager"""
 
     def create_user(self, mobile, password=None, **extra_fields):
@@ -20,4 +19,3 @@ class CustomUserManager(BaseUserManager):
         user.is_admin = True
         user.save(using=self._db)
         return user
-    
