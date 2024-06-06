@@ -113,7 +113,7 @@ class Product(Extensions):
         return self.title
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.title_en)
+        self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
 
