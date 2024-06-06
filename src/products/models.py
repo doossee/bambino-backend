@@ -134,7 +134,6 @@ class ProductImage(models.Model):
         processors=[ResizeToFill(100, 100)],
         format="WEBP",
         options={"quality": 60},
-        verbose_name=_("Thumbnail"),
     )
 
     def __str__(self):

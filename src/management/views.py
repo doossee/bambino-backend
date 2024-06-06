@@ -1,32 +1,55 @@
 # views.py
 from rest_framework.views import APIView
+from rest_framework import mixins, viewsets, status, permissions
 from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth.models import User
-from .models import OTP
-from .serializers import SendOTPSerializer, VerifyOTPSerializer
+from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from src.views import MultiSerializerMixin
+
+from .models import User, OTP
+from .serializers import (
+    SendOTPSerializer, 
+    VerifyOTPSerializer, 
+    UserSerializer, 
+    MeUserSerializer
+)
+from .utils import send_sms
 
 
 class SendOTPView(APIView):
+    """
+    This view sends OTP(One Time Password) code to user
+    """
+
+    permission_classes = [permissions.AllowAny]
+    
     def post(self, request):
+
         serializer = SendOTPSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data["phone_number"]
-            try:
-                user = User.objects.get(phone_number=phone_number)
-                otp = OTP(user=user)
-                otp.generate_otp()
-
-                return Response({"message": "OTP sent"}, status=status.HTTP_200_OK)
-            except User.DoesNotExist:
-                return Response(
-                    {"message": "User not found"}, status=status.HTTP_404_NOT_FOUND
-                )
+            user, created = User.objects.get_or_create(phone_number=phone_number)
+            otp = OTP.objects.create(user=user)
+            otp.generate_otp()
+            send_sms(
+                phone_number=phone_number,
+                message=f"This is test from Eskiz",
+            )
+            return Response(
+                {"message": f"OTP {otp.otp_code} sent"}, status=status.HTTP_200_OK
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyOTPView(APIView):
+    """
+    This view verifies OTP(One Time Password) code from user
+    and returns JWT access and refresh tokens
+    """
+
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         if serializer.is_valid():
@@ -51,3 +74,39 @@ class VerifyOTPView(APIView):
                     {"message": "User not found"}, status=status.HTTP_404_NOT_FOUND
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
+    """
+    User model viewset
+    """
+    
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    serializer_action_classes = {
+        "me": MeUserSerializer
+    }
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_permissions(self):
+        if self.action == "me":
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = super().permission_classes
+
+        return super(UserViewSet, self).get_permissions()
+
+    def get_object(self):   
+        if self.action == "me" :
+            return self.request.user
+        return super().get_object()
+
+    @action(url_path="me", detail=False, methods=["GET", "PUT", "PATCH"])
+    def me(self, request, *args, **kwargs):
+        match request.method:
+            case "GET":
+                return super().retrieve(request, *args, **kwargs)
+            case "PUT":
+                return super().update(request, *args, **kwargs)
+            case "PATCH":
+                return super().partial_update(request, *args, **kwargs)

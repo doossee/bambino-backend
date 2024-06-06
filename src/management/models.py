@@ -12,26 +12,27 @@ phone_regex = RegexValidator(regex=r"^\+\d{12}$", message="Wrong  number")
 
 class User(AbstractUser):
     """
-    User model
+    Custom User model
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = None
     username = None
 
-    mobile = models.CharField(validators=[phone_regex], max_length=13, unique=True)
-    mobile_verified = models.BooleanField(default=False)
+    phone_number = models.CharField(
+        validators=[phone_regex], max_length=13, unique=True
+    )
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = "mobile"
+    USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = []
 
     def get_full_name(self):
         return f"{self.first_name} - {self.last_name}"
 
     def get_short_name(self):
-        return self.mobile
+        return self.phone_number
 
     def has_perm(self, perm, obj=None):
         return True
@@ -44,6 +45,10 @@ class User(AbstractUser):
 
 
 class OTP(models.Model):
+    """ "
+    OTP(One Time Password) model
+    """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     otp_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
