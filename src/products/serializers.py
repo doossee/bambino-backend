@@ -65,7 +65,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
     Product image serialier
     """
 
-    thumbnail = serializers.SerializerMethodField()
+    # thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductImage
@@ -85,8 +85,8 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     #     return data
 
-    def get_thumbnail(self, obj):
-        return os.getenv("MEDIA_PREFIX", "") + obj.thumbnail.url
+    # def get_thumbnail(self, obj):
+    #     return os.getenv("MEDIA_PREFIX", "") + obj.thumbnail.url
 
 
 class ProductSerializer(serializers.ModelSerializer):
