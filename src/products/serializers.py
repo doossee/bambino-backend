@@ -69,12 +69,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductImage
-        fields = [
-            "id",
-            "product_id",
-            "image",
-            "thumbnail",
-        ]
+        exclude = ["product",]
+        # fields = [
+        #     "id",
+        #     "product_id",
+        #     "image",
+        #     "thumbnail",
+        # ]
 
     # def to_representation(self, instance):
     #     data = super().to_representation(instance)
