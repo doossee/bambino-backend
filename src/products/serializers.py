@@ -61,34 +61,37 @@ class CategoryTreeSerializer(AbstractCategorySerializer):
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
-    """Product image serialier"""
+    """
+    Product image serialier
+    """
 
     thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductImage
-        # fields = [
-        #     "id",
-        #     "product",
-        #     "image",
-        #     "thumbnail",
-        # ]
-        fields = '__all__'
+        fields = [
+            "id",
+            "product_id",
+            "image",
+            "thumbnail",
+        ]
 
-    # def to_representation(self, instance):
-    #     data = super().to_representation(instance)
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
 
-    #     if hasattr(instance, "image") and hasattr(instance.image, "url"):
-    #         data["image"] = f"{os.getenv('MEDIA_PREFIX', '')}{instance.image.url}"
+        if hasattr(instance, "image") and hasattr(instance.image, "url"):
+            data["image"] = f"{os.getenv('MEDIA_PREFIX', '')}{instance.image.url}"
 
-    #     return data
+        return data
 
     def get_thumbnail(self, obj):
         return os.getenv("MEDIA_PREFIX", "") + obj.thumbnail.url
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    """Product default serializer"""
+    """
+    Product default serializer
+    """
 
     class Meta:
         model = Product
