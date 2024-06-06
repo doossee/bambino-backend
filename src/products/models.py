@@ -15,15 +15,15 @@ User = get_user_model()
 
 
 def brand_image_path(instance, filename):
-    return f"images/brands/{instance.name}/{filename}"
+    return f"uploads/brands/{instance.name}/{filename}"
 
 
 def category_image_path(instance, filename):
-    return f"images/categories/{instance.name}/{filename}"
+    return f"uploads/categories/{instance.name}/{filename}"
 
 
 def product_image_path(instance, filename):
-    return f"images/products/{instance.name}/{filename}"
+    return f"uploads/products/{instance.name}/{filename}"
 
 
 class Brand(models.Model):
