@@ -9,10 +9,10 @@ from src.views import MultiSerializerMixin
 
 from .models import User, OTP
 from .serializers import (
-    SendOTPSerializer, 
-    VerifyOTPSerializer, 
-    UserSerializer, 
-    MeUserSerializer
+    SendOTPSerializer,
+    VerifyOTPSerializer,
+    UserSerializer,
+    MeUserSerializer,
 )
 from .utils import send_sms
 
@@ -23,7 +23,7 @@ class SendOTPView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
 
         serializer = SendOTPSerializer(data=request.data)
@@ -80,12 +80,10 @@ class UserViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     """
     User model viewset
     """
-    
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    serializer_action_classes = {
-        "me": MeUserSerializer
-    }
+    serializer_action_classes = {"me": MeUserSerializer}
     permission_classes = [permissions.IsAdminUser]
 
     def get_permissions(self):
@@ -96,8 +94,8 @@ class UserViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
 
         return super(UserViewSet, self).get_permissions()
 
-    def get_object(self):   
-        if self.action == "me" :
+    def get_object(self):
+        if self.action == "me":
             return self.request.user
         return super().get_object()
 

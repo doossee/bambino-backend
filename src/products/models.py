@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import slugify
 
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -9,22 +10,20 @@ from imagekit.processors import ResizeToFill
 
 from src.models import Extensions, TimeStampedModel
 
-from .fields import WebPField
-
 
 User = get_user_model()
 
 
 def brand_image_path(instance, filename):
-    return "brand/icons/{}/{}".format(instance.name, filename)
+    return f"images/brands/{instance.name}/{filename}"
 
 
 def category_image_path(instance, filename):
-    return "category/icons/{}/{}".format(instance.name, filename)
+    return f"images/categories/{instance.name}/{filename}"
 
 
 def product_image_path(instance, filename):
-    return "product/images/{}/{}".format(instance.title, filename)
+    return f"images/products/{instance.name}/{filename}"
 
 
 class Brand(models.Model):
@@ -32,9 +31,9 @@ class Brand(models.Model):
     Brand model
     """
 
-    name = models.CharField(verbose_name=_("Brand name"), max_length=255)
+    name = models.CharField(verbose_name=_("Name"), max_length=255)
     description = models.TextField(verbose_name=_("Description"), blank=True)
-    icon = WebPField(upload_to=brand_image_path, blank=True)
+    icon = models.ImageField(upload_to=brand_image_path, blank=True)
 
     def __str__(self):
         return self.name
@@ -50,7 +49,7 @@ class Category(MPTTModel):
     """
 
     name = models.CharField(verbose_name=_("Name"), max_length=255)
-    icon = WebPField(upload_to=category_image_path, blank=True)
+    icon = models.ImageField(upload_to=category_image_path, blank=True)
     parent = TreeForeignKey(
         verbose_name=_("Parent category"),
         to="self",
@@ -77,6 +76,7 @@ class Product(Extensions):
     """
 
     title = models.CharField(verbose_name=_("Title"), max_length=255)
+    slug = models.SlugField(verbose_name=_("Slug"), null=True, blank=True)
     description = models.TextField(verbose_name=_("Description"), blank=True)
 
     category = TreeForeignKey(
@@ -95,7 +95,6 @@ class Product(Extensions):
     )
 
     quantity = models.IntegerField(verbose_name=_("Quantity"), default=1)
-
     price = models.DecimalField(
         verbose_name=_("Price"), max_digits=11, decimal_places=2
     )
@@ -106,12 +105,16 @@ class Product(Extensions):
     views = models.PositiveIntegerField(verbose_name=_("Views"), default=0)
     is_deleted = models.BooleanField(verbose_name=_("Is deleted"), default=False)
 
-    def __str__(self):
-        return self.title
-
     class Meta:
         verbose_name = _("Product")
         verbose_name_plural = _("Products")
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.title_en)
+        super().save(*args, **kwargs)
 
 
 class ProductImage(models.Model):

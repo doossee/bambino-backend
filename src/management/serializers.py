@@ -26,15 +26,13 @@ class ProfileMeta:
 
 
 class UserSerializer(serializers.ModelSerializer):
-    
     """User model serializer"""
 
     class Meta(ProfileMeta):
         model = User
 
-        
+
 class MeUserSerializer(serializers.ModelSerializer):
-    
     """User model serializer"""
 
     class Meta(ProfileMeta):

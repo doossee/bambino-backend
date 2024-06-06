@@ -6,7 +6,7 @@ from .views import SendOTPView, VerifyOTPView, UserViewSet
 
 router = routers.DefaultRouter()
 
-router.register(r'users', UserViewSet, basename='user')
+router.register(r"users", UserViewSet, basename="user")
 
 urlpatterns = router.urls
 

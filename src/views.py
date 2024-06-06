@@ -1,6 +1,7 @@
 from django.contrib.auth import views
 from rest_framework import viewsets
 
+
 class MultiSerializerMixin(viewsets.GenericViewSet):
     """
     Mixin that allows use different serializer for different actions
@@ -9,7 +10,10 @@ class MultiSerializerMixin(viewsets.GenericViewSet):
     serializer_action_classes = {}
 
     def get_serializer_class(self):
-        return self.serializer_action_classes.get(self.action, super().get_serializer_class())
+        return self.serializer_action_classes.get(
+            self.action, super().get_serializer_class()
+        )
+
 
 class LogoutView(views.LogoutView):
     """ """

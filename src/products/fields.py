@@ -6,17 +6,17 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 
 
-# def validate_hex_color(value):
-#     if not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", value):
-#         raise ValidationError(f"{value} is not a valid hex color code")
+def validate_hex_color(value):
+    if not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", value):
+        raise ValidationError(f"{value} is not a valid hex color code")
 
 
-# class ColorField(models.CharField):
-#     default_validators = [validate_hex_color]
+class ColorField(models.CharField):
+    default_validators = [validate_hex_color]
 
-#     def __init__(self, *args, **kwargs):
-#         kwargs["max_length"] = 7
-#         super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        kwargs["max_length"] = 7
+        super().__init__(*args, **kwargs)
 
 
 class WebPField(models.ImageField):
