@@ -41,8 +41,8 @@ class CategoryViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     """
 
     queryset = Category.objects.all()
+    serializer_class = AbstractCategorySerializer
     serializer_action_classes = {
-        "default": AbstractCategorySerializer,
         "list_tree": CategoryTreeSerializer,
     }
     # permission_classes = [IsAdminUser | ReadOnly]
