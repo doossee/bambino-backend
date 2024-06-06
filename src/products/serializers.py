@@ -74,13 +74,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
             "thumbnail",
         ]
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
 
-        if hasattr(instance, "image") and hasattr(instance.image, "url"):
-            data["image"] = f"{os.getenv('MEDIA_PREFIX', '')}{instance.image.url}"
+    #     if hasattr(instance, "image") and hasattr(instance.image, "url"):
+    #         data["image"] = f"{os.getenv('MEDIA_PREFIX', '')}{instance.image.url}"
 
-        return data
+    #     return data
 
     def get_thumbnail(self, obj):
         return os.getenv("MEDIA_PREFIX", "") + obj.thumbnail.url
