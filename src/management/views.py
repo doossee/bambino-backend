@@ -101,10 +101,11 @@ class UserViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
 
     @action(url_path="me", detail=False, methods=["GET", "PUT", "PATCH"])
     def me(self, request, *args, **kwargs):
-        match request.method:
-            case "GET":
-                return super().retrieve(request, *args, **kwargs)
-            case "PUT":
-                return super().update(request, *args, **kwargs)
-            case "PATCH":
-                return super().partial_update(request, *args, **kwargs)
+        if request.method == "GET":
+            return super().retrieve(request, *args, **kwargs)
+        elif request.method == "PUT":
+            return super().update(request, *args, **kwargs)
+        elif request.method == "PATCH":
+            return super().partial_update(request, *args, **kwargs)
+        else:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
