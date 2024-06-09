@@ -32,10 +32,10 @@ class SendOTPView(APIView):
             user, created = User.objects.get_or_create(phone_number=phone_number)
             otp = OTP.objects.create(user=user)
             otp.generate_otp()
-            send_sms(
-                phone_number=phone_number,
-                message=f"This is test from Eskiz",
-            )
+            # send_sms(
+            #     phone_number=phone_number,
+            #     message=f"This is test from Eskiz",
+            # )
             return Response(
                 {"message": f"OTP {otp.otp_code} sent"}, status=status.HTTP_200_OK
             )

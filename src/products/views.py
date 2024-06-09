@@ -1,4 +1,4 @@
-from django.http import Http404
+from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -20,6 +20,7 @@ from .serializers import (
     ProductImageSerializer,
     ProductSerializer,
     ProductReadSerializer,
+    CreateImageSerializer,
 )
 from .filters import ProductFilter
 from .permissions import ReadOnly
@@ -66,51 +67,35 @@ class ProductViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     serializer_action_classes = {
         "list": ProductReadSerializer,
         "retrieve": ProductReadSerializer,
-        "create_image": ProductImageSerializer,
+        "create_image": CreateImageSerializer,
     }
     # permission_classes = [IsAdminUser | ReadOnly]
     filterset_class = ProductFilter
     search_fields = [
         "title",
     ]
-    lookup_field = "slug"
 
-    @action(detail=True, methods=["post"])
-    def create_image(self, request, slug=None):
+    @action(detail=True, methods=['POST'])
+    def create_image(self, request, pk=None):
         product = self.get_object()
+        image_data = request.data.get('image')
 
-        image_data = request.data.get("image")
         if not image_data:
-            return Response(
-                {"detail": "Image data is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({'detail': 'Image data is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Use ProductImageSerializer for the image
-        serializer = ProductImageSerializer(
-            data={"product": product.id, "image": image_data}
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        image = ProductImage(product=product, image=image_data)
+        image.save()
 
-    @action(detail=True, methods=["delete"])
-    def delete_image(self, request, slug=None, image_id=None):
+        serializer = self.get_serializer(image)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['DELETE'], url_path='delete_image/(?P<image_id>[^/.]+)')
+    def delete_image(self, request, pk=None, image_id=None):
         product = self.get_object()
-
-        try:
-            image = ProductImage.objects.get(id=image_id, product=product)
-        except ProductImage.DoesNotExist:
-            return Response(
-                {"detail": "Image not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        image = get_object_or_404(ProductImage, id=image_id, product=product)
 
         image.delete()
-        return Response(
-            {"detail": "Image deleted successfully."}, status=status.HTTP_204_NO_CONTENT
-        )
+        return Response({'detail': 'Image deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
         qs = (

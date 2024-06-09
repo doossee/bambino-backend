@@ -65,28 +65,31 @@ class ProductImageSerializer(serializers.ModelSerializer):
     Product image serialier
     """
 
-    # thumbnail = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductImage
-        exclude = ["product",]
-        # fields = [
-        #     "id",
-        #     "product_id",
-        #     "image",
-        #     "thumbnail",
-        # ]
+        fields = [
+            "id",
+            "product",
+            "image",
+            "thumbnail",
+        ]
 
     # def to_representation(self, instance):
     #     data = super().to_representation(instance)
 
     #     if hasattr(instance, "image") and hasattr(instance.image, "url"):
-    #         data["image"] = f"{os.getenv('MEDIA_PREFIX', '')}{instance.image.url}"
+    #         data["image"] = f"{os.getenv("MEDIA_PREFIX", "")}{instance.image.url}"
 
     #     return data
 
-    # def get_thumbnail(self, obj):
-    #     return os.getenv("MEDIA_PREFIX", "") + obj.thumbnail.url
+    def get_thumbnail(self, obj):
+        return os.getenv("MEDIA_PREFIX", "") + obj.thumbnail.url
+
+
+class CreateImageSerializer(serializers.Serializer):
+    image = serializers.ImageField()
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -104,9 +107,9 @@ class ProductReadSerializer(serializers.ModelSerializer):
     Product retrieve model serializer
     """
 
-    brand = BrandSerializer()
-    category = CategoryExpandSerializer()
-    images = ProductImageSerializer()
+    brand = BrandSerializer(read_only=True)
+    category = CategoryExpandSerializer(read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product

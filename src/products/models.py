@@ -23,7 +23,9 @@ def category_image_path(instance, filename):
 
 
 def product_image_path(instance, filename):
-    return f"uploads/products/{instance.name}/{filename}"
+    return f"uploads/products/{instance.product.title}/{filename}"
+
+
 
 
 class Brand(models.Model):
@@ -76,7 +78,7 @@ class Product(Extensions):
     """
 
     title = models.CharField(verbose_name=_("Title"), max_length=255)
-    slug = models.SlugField(verbose_name=_("Slug"), null=True, blank=True)
+    # slug = models.SlugField(verbose_name=_("Slug"), null=True, blank=True)
     description = models.TextField(verbose_name=_("Description"), blank=True)
 
     category = TreeForeignKey(
@@ -113,7 +115,8 @@ class Product(Extensions):
         return self.title
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.title)
+        if not self.pk:
+            self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
 
